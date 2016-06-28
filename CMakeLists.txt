@@ -47,6 +47,19 @@ ecm_setup_version(${KF5_VERSION}
 find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Core DBus Widgets Qml Quick Test)
 find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons Config DBusAddons I18n IdleTime Solid FileMetaData Crash KIO)
 
+find_package(KJieba)
+set_package_properties(KJieba PROPERTIES
+    DESCRIPTION "Qt-style API to use yanyiwu's libcppjieba Chinese word segmentation DBus service"
+    URL "https://github.com/isoft-linux/kjieba"
+    TYPE OPTIONAL
+    PURPOSE "Use libcppjieba to segment Chinese word"
+)
+set(HAVE_KJIEBA FALSE)
+if(KJieba_FOUND)
+    add_definitions(-DHAVE_KJIEBA)
+    set(HAVE_KJIEBA TRUE)
+endif()
+
 find_package(LMDB)
 set_package_properties(LMDB
     PROPERTIES

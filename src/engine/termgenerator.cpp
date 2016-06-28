@@ -23,6 +23,9 @@
 
 #include <QTextBoundaryFinder>
 #include <QStringList>
+#if HAVE_KJIEBA
+#include <KJieba/KJieba_Interface>
+#endif
 
 using namespace Baloo;
 
@@ -99,6 +102,48 @@ void TermGenerator::indexText(const QString& text, const QByteArray& prefix, int
 void TermGenerator::indexFileNameText(const QString& text, const QByteArray& prefix, int wdfInc)
 {
     QStringList terms = termList(text);
+    //detect text contains CJKV or not.
+    //if contain CJKV, every CJKV character should be a term.
+    //according to http://stackoverflow.com/questions/1366068/whats-the-complete-range-for-chinese-characters-in-unicode
+    //Block                                   Range       Comment
+    //CJK Unified Ideographs                  4E00-9FFF   Common
+    //CJK Unified Ideographs Extension A      3400-4DFF   Rare
+    //CJK Unified Ideographs Extension B      20000-2A6DF Rare, historic
+    //CJK Compatibility Ideographs            F900-FAFF   Duplicates, unifiable variants, corporate characters
+    //CJK Compatibility Ideographs Supplement 2F800-2FA1F Unifiable variants
+    QString cjkString;
+#if HAVE_KJIEBA
+    KJieba::KJiebaInterface *interface = new KJieba::KJiebaInterface;
+#endif
+    int nCount = text.count();
+    for (int i = 0; i < nCount; i++) {
+        QChar cha = text.at(i);
+        uint uni = cha.unicode();
+        if ((uni >= 0x4E00 && uni <= 0x9FFF)    ||
+            (uni >= 0x3400 && uni <= 0x4DFF)    ||
+            (uni >= 0x20000 && uni <= 0x2A6DF)  ||
+            (uni >= 0xF900 && uni <= 0xFAFF)    ||
+            (uni >= 0x2F800 && uni <= 0x2FA1F)) {
+            terms << QString(cha);
+#if HAVE_KJIEBA
+            terms << interface->topinyin(QString(cha), false);
+#endif
+            cjkString += QString(cha);
+        }
+    }
+#if HAVE_KJIEBA
+    if (!cjkString.isEmpty()) {
+        QStringList words = interface->query(cjkString);
+        Q_FOREACH (QString word, words) {
+            terms << word;
+            terms << interface->topinyin(word);
+            terms << interface->topinyin(word, false);
+        }
+    }
+
+    delete interface;
+    interface = NULL;
+#endif
     for (const QString& term : terms) {
         QByteArray arr = term.toUtf8();
 

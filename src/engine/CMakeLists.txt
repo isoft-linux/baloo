@@ -38,6 +38,10 @@ target_link_libraries(KF5BalooEngine
     KF5BalooCodecs
 )
 
+if(HAVE_KJIEBA)
+    target_link_libraries(KF5BalooEngine KJieba::KJieba)
+endif()
+
 set_target_properties(KF5BalooEngine PROPERTIES
     VERSION ${BALOO_VERSION_STRING}
     SOVERSION ${BALOO_SOVERSION}
